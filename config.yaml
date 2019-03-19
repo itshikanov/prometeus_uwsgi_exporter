@@ -1,10 +1,17 @@
-port: 9238
-socket_dir: "/run/uwsgi/stats/"
-pidfile: "/run/uwsgi_expoter.pid"
+port: 127.0.0.1:9238
+socket_dir: "/tmp/"
+pidfile: "/tmp/uwsgi_expoter.pid"
 stats_sockets:
 
-- domain: your.domain.com
-  socket: your_socket_name.sock
+#- domain: your.domain.com
+#  socket: prometheus_uwsgi.json
 
-- domain: other-domain.com
-  socket: other_socket_domain.sock
+#- domain: other-domain.com
+#  tcp: 127.0.0.1:5000
+
+stats_sockets:
+  - domain: android
+    tcp: 127.0.0.1:50000
+  - domain: ios
+    tcp: 127.0.0.1:50002
+

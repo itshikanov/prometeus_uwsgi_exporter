@@ -17,10 +17,11 @@ import (
 type StatsSocketConf_t struct {
 	Domain string `yaml:"domain"`
 	Socket string `yaml:"socket"`
+	Tcp    string `yaml:"tcp"`
 }
 
 type Config_t struct {
-	Port         int                 `yaml:"port"`
+	Port         string              `yaml:"port"`
 	SocketDir    string              `yaml:"socket_dir"`
 	PIDPath      string              `yaml:"pidfile"`
 	StatsSockets []StatsSocketConf_t `yaml:"stats_sockets"`
@@ -62,6 +63,7 @@ var Version_flag = flag.Bool("v", false, "Version")
 /**
  * @brief Configuration struct
  */
+
 var Conf Config_t
 
 var VERSION_BUILD_GIT_HASH = "NOT SET"
@@ -97,7 +99,9 @@ func ParseConfig() {
  */
 func CheckUnixSocket(FullPath string) bool {
 	FoundError := false
-
+	if len(findIP(FullPath)) > 0 {
+		return FoundError
+	}
 	// Check path exist
 	_, err := os.Stat(FullPath)
 	if err != nil {
@@ -139,15 +143,22 @@ func ValidateConfig() {
 	}
 
 	// Check path fist start polling
+	//fmt.Println(Conf.StatsSockets)
 	for _, SocketPath := range Conf.StatsSockets {
 		// Calculate full path
 		var FullPath string
+		var TcpPath string
 
+		TcpPath = SocketPath.Tcp
 		if path.IsAbs(SocketPath.Socket) {
 			// Support socket with absolute path
 			FullPath = SocketPath.Socket
 		} else {
 			FullPath = path.Join(Conf.SocketDir, SocketPath.Socket)
+		}
+
+		if len(SocketPath.Socket) == 0 {
+			FullPath = TcpPath
 		}
 
 		log.Infof("Socket Path:%s", FullPath)
@@ -158,7 +169,7 @@ func ValidateConfig() {
 
 		FileMap[SocketPath.Domain] = FullPath
 	}
-
+	fmt.Println(FileMap)
 	if !FoundError {
 		log.Info("Configuration correct, no error detect\n")
 	} else {
@@ -208,7 +219,7 @@ func main() {
 
 	ValidateConfig()
 
-	l, err := net.Listen("tcp", fmt.Sprintf(":%d", Conf.Port))
+	l, err := net.Listen("tcp", fmt.Sprintf("%v", Conf.Port))
 	if err != nil {
 		log.Fatal(err)
 	}

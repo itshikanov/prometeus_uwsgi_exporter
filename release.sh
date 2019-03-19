@@ -2,14 +2,16 @@
 
 export GOOS='linux'
 ALL_ARC=( "amd64" "386" "arm" "arm64" )
+ALL_ARC=( "amd64" )
 
-NAME='uWSGI_expoter'
-VERSION=`git describe --abbrev=0 --tags`
-RELEASE_FOLDER="release"
+NAME='prometeus_uwsgi_exporter'
+#VERSION=`git describe --abbrev=0 --tags`
+VERSION="1"
+RELEASE_FOLDER="/tmp/$NAME/release"
 
 # Clean OLD release folder if preset and recreate it
-rm -rfv $RELEASE_FOLDER
-mkdir -p $RELEASE_FOLDER
+#rm -rfv $RELEASE_FOLDER
+#mkdir -p $RELEASE_FOLDER
 
 for arc in "${ALL_ARC[@]}"
 do
@@ -21,9 +23,9 @@ do
     make clean
 
     make
-    mkdir -p $FINAL_FOLDER_NAME
-    mv -v $NAME $FINAL_FOLDER_NAME
-    tar -zcvf $ARCHIVE_NAME $FINAL_FOLDER_NAME
-    mv $ARCHIVE_NAME $RELEASE_FOLDER
-    rm -rfv $FINAL_FOLDER_NAME
+#    mkdir -p $FINAL_FOLDER_NAME
+#    mv -v $NAME $FINAL_FOLDER_NAME
+#    tar -zcvf $ARCHIVE_NAME $FINAL_FOLDER_NAME
+#    mv $ARCHIVE_NAME $RELEASE_FOLDER
+#    rm -rfv $FINAL_FOLDER_NAME
 done

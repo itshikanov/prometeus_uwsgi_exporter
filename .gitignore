@@ -1,2 +1,4 @@
 prometheus_bot
 uWSGI_expoter
+prometheus-uwsgi-exporter
+.idea

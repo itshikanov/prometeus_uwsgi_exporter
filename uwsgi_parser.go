@@ -8,6 +8,7 @@ import (
 	"net"
 	"strings"
 	"sync"
+	"regexp"
 )
 
 // JSON Definition
@@ -366,38 +367,50 @@ func uWSGI_DataFormat(data Uwsgi_json_t, domain string) string {
 /**
  * @brief Get json text from File DEBUG
  */
-func ProvideJsonTextFile(path string) []byte {
+func ProvideJsonTextFile(path string) ([]byte, error) {
 	b, err := ioutil.ReadFile(path)
 
 	if err != nil {
 		log.Criticalf("Impossible read file:%v\n", err)
 	}
-	return b
+	return b, err
 }
 
 /**
  * @brief Get json text from Unix Socket
  */
-func ProvideJsonTextFromUnixSocket(FullPath string) ([]byte, error) {
+func ProvideJsonTextFromUnixSocket(FullPath string, connect_type string) ([]byte, error) {
 	if CheckUnixSocket(FullPath) {
 		log.Errorf("Impossible open UnixSocket %s\r\n", FullPath)
 		return nil, nil
 	}
 
-	c, err := net.Dial("unix", FullPath)
+	c, err := net.Dial(connect_type, FullPath)
 	if err != nil {
 		return nil, err
 	}
 
-	buf := make([]byte, 1024*16)
+	buf := make([]byte, 1024*100)
 	nbyte, err := c.Read(buf)
 	c.Close()
+	//fmt.Println(nbyte)
+	//fmt.Println(bytes.IndexByte(buf, 0))
+	//fmt.Println(string(buf[:bytes.IndexByte(buf, 0)]))
+
 	return buf[:nbyte], nil
 }
 
 type uWSGI_BufferCollector struct {
 	buffer bytes.Buffer
 	mutex  sync.Mutex
+}
+
+func findIP(input string) string {
+	numBlock := "(25[0-5]|2[0-4][0-9]|1[0-9][0-9]|[1-9]?[0-9])"
+	regexPattern := numBlock + "\\." + numBlock + "\\." + numBlock + "\\." + numBlock
+
+	regEx := regexp.MustCompile(regexPattern)
+	return regEx.FindString(input)
 }
 
 /**
@@ -426,9 +439,14 @@ func ReadStatsSocket_uWSGI() []byte {
 	wg.Add(len(FileMap))
 	for Domain, FullPath := range FileMap {
 		go func(FullPath string, CurretDomain string) {
+			var connect_type string
 			Curret_uWSGI_Data := new(Uwsgi_json_t)
-
-			text, err := ProvideJsonTextFromUnixSocket(FullPath)
+			if len(findIP(FullPath)) > 0 {
+				connect_type = "tcp"
+			} else {
+				connect_type = "unix"
+			}
+			text, err := ProvideJsonTextFromUnixSocket(FullPath, connect_type)
 			if err != nil {
 				log.Errorf("Cannot read socket:%v", err)
 				wg.Done()
