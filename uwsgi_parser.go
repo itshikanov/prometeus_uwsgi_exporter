@@ -9,6 +9,7 @@ import (
 	"strings"
 	"sync"
 	"regexp"
+	"io"
 )
 
 // JSON Definition
@@ -391,13 +392,42 @@ func ProvideJsonTextFromUnixSocket(FullPath string, connect_type string) ([]byte
 	}
 
 	buf := make([]byte, 1024*100)
-	nbyte, err := c.Read(buf)
-	c.Close()
-	//fmt.Println(nbyte)
+	var _nbyte  int
+	//initial := make([]byte, 1024*100)
+	//nbyte, err := c.Read(buf)
+	//fmt.Println(string(buf[:nbyte]))
+	//fmt.Println(bytes.IndexByte(buf, 0))
+	//nbyte_, err := c.Read(tmp)
+	//fmt.Println(string(buf[:nbyte_]))
+	//fmt.Println(bytes.IndexByte(tmp, 0))
+	////buf = append(buf, tmp[:nbyte_]...)
+	//c.Close()
+	////fmt.Println(bytes.IndexByte(buf, 0))
+	//return buf[:nbyte], nil
+
+	for {
+		tmp := make([]byte, 1024*40)
+		nbyte, err := c.Read(tmp)
+		if err != nil {
+			if err != io.EOF {
+				log.Errorf("Cannot read socket:%v", err)
+			}
+			break
+		}
+		//fmt.Println("got", n, "bytes.")
+		//fmt.Println(bytes.IndexByte(tmp, 0))
+		//initial = tmp
+		//fmt.Println(nbyte)
+		buf = append(buf, tmp[:nbyte]...)
+		_nbyte += nbyte
+		//fmt.Println(bytes.IndexByte(buf, 0))
+	}
+	//fmt.Println("test",string(buf), len(buf) , _nbyte)
+	//fmt.Println("test",string(initial), len(buf) , _nbyte)
+	buf = bytes.Trim(buf, "\x00")
+	return buf[:_nbyte], nil
 	//fmt.Println(bytes.IndexByte(buf, 0))
 	//fmt.Println(string(buf[:bytes.IndexByte(buf, 0)]))
-
-	return buf[:nbyte], nil
 }
 
 type uWSGI_BufferCollector struct {
